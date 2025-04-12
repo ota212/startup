@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload de CSV</title>
+</head>
+<body>
+    <h1>Envie seu arquivo Excel (Nós não armazenamos seus dados)</h1>
+    <form action="/upload" enctype="multipart/form-data" method="post">
+        <input type="file" name="file" accept=".csv, .xlsx, .xls">
+        <input type="submit" value="Enviar">
+    </form>
+
+    {% if show_plot %}
+        <h2>Análise incial:</h2>
+        <iframe src="/static/grafico_clientes.html" width="100%" height="500"></iframe>
+	<iframe src="/static/grafico_mensal.html" width="100%" height="3000"></iframe>
+	<iframe src="/static/grafico_produtos.html" width="100%" height="500"></iframe>
+    {% endif %}
+
+    {% if error %}
+        <p style="color: red">{{ error }}</p>
+    {% endif %}
+</body>
+</html>
