@@ -249,292 +249,74 @@ async def upload_file(request: Request, file: UploadFile):
     melhores_clientes = pd.merge(melhores_clientes[['nome']], clientes11[['nome']], on=list(clientes1[['nome']].columns), how='outer')
     melhores_clientes = pd.merge(melhores_clientes[['nome']], clientes12[['nome']], on=list(clientes1[['nome']].columns), how='outer')
     
-    # Formatar valores como dinheiro
+        # Dicionário com os DataFrames e nomes
+    clientes_dict = {
+        "Janeiro": clientes1,
+        "Fevereiro": clientes2,
+        "Março": clientes3,
+        "Abril": clientes4,
+        "Maio": clientes5,
+        "Junho": clientes6,
+        "Julho": clientes7,
+        "Agosto": clientes8,
+        "Setembro": clientes9,
+        "Outubro": clientes10,
+        "Novembro": clientes11,
+        "Dezembro": clientes12,
+    }
+    
+    # Formatar moeda
     def format_currency(value):
         return "${:,.2f}".format(value)
     
-    # Formatar os valores 'Valor_individual' como dinheiro
-    clientes1['Valor_individual_fmt'] = clientes1['Valor_individual'].apply(format_currency)
-    clientes2['Valor_individual_fmt'] = clientes2['Valor_individual'].apply(format_currency)
-    clientes3['Valor_individual_fmt'] = clientes3['Valor_individual'].apply(format_currency)
-    clientes4['Valor_individual_fmt'] = clientes4['Valor_individual'].apply(format_currency)
-    clientes5['Valor_individual_fmt'] = clientes5['Valor_individual'].apply(format_currency)
-    clientes6['Valor_individual_fmt'] = clientes6['Valor_individual'].apply(format_currency)
-    clientes7['Valor_individual_fmt'] = clientes7['Valor_individual'].apply(format_currency)
-    clientes8['Valor_individual_fmt'] = clientes8['Valor_individual'].apply(format_currency)
-    clientes9['Valor_individual_fmt'] = clientes9['Valor_individual'].apply(format_currency)
-    clientes10['Valor_individual_fmt'] = clientes10['Valor_individual'].apply(format_currency)
-    clientes11['Valor_individual_fmt'] = clientes11['Valor_individual'].apply(format_currency)
-    clientes12['Valor_individual_fmt'] = clientes12['Valor_individual'].apply(format_currency)
+    # Criar uma lista de gráficos válidos
+    validos = [(mes, df) for mes, df in clientes_dict.items() if not df.empty]
     
-    
-    # Definir cores para os gráficos
-    colors = px.colors.qualitative.Set3
-    unique_descriptions = clientes1['nome'].unique()
-    num_categories = len(unique_descriptions)
-    
-    if num_categories > len(colors):
-        colors = px.colors.qualitative.Set2 
-    
-    color_map = {desc: colors[i % len(colors)] for i, desc in enumerate(unique_descriptions)}
-    bar_colors = [color_map[desc] for desc in clientes1['nome']]
-    
-    # Definir a estrutura dos subgráficos (specs)
-    specs = [[{"type": "bar"}, {"type": "table"}]] * 12
-    
-    # Criar subgráficos
+    # Criar subgráficos com base no número de meses válidos
     sub = make_subplots(
-        rows=12, cols=2, 
-        column_widths=[1, 1.2],  
-        subplot_titles=[
-        "Valor gasto por clientes - Janeiro", "Tabela - Janeiro", 
-        "Valor gasto por clientes - Fevereiro", "Tabela - Fevereiro",
-        "Valor gasto por clientes - Março", "Tabela - Março",
-        "Valor gasto por clientes - Abril", "Tabela - Abril",
-        "Valor gasto por clientes - Maio", "Tabela - Maio",
-        "Valor gasto por clientes - Junho", "Tabela - Junho",
-        "Valor gasto por clientes - Julho", "Tabela - Julho",
-        "Valor gasto por clientes - Agosto", "Tabela - Agosto",
-        "Valor gasto por clientes - Setembro", "Tabela - Setembro",
-        "Valor gasto por clientes - Outubro", "Tabela - Outubro",
-        "Valor gasto por clientes - Novembro", "Tabela - Novembro",
-        "Valor gasto por clientes - Dezembro", "Tabela - Dezembro"
-    ],
-        specs=specs,
-        row_heights=[0.08] * 12,  # Ajuste de altura (gráficos maiores, tabelas menores)
-        vertical_spacing=0.02  # Maior espaçamento entre linhas
+    rows=len(validos),
+        cols=2,
+        column_widths=[1, 1.2],
+        subplot_titles=sum([[f"Valor gasto por clientes - {mes}", f"Tabela - {mes}"] for mes, _ in validos], []),
+        specs=[[{"type": "bar"}, {"type": "table"}] for _ in validos],
+        row_heights=[0.08] * len(validos),
+        vertical_spacing=0.02
     )
     
-    # Gráfico de barras para 2021
-    sub.add_trace(
-        go.Bar(x=clientes1['nome'], 
-               y=clientes1['Valor_individual'], 
-               name='Valores Janeiro', 
-               marker=dict(color=bar_colors)),
-        row=1, col=1
-    )
+    # Definir cores por cliente
+    all_nomes = pd.concat([df[['nome']] for _, df in validos])
+    unique_descriptions = all_nomes['nome'].unique()
+    colors = px.colors.qualitative.Set3
+    if len(unique_descriptions) > len(colors):
+        colors = px.colors.qualitative.Set2
+    color_map = {desc: colors[i % len(colors)] for i, desc in enumerate(unique_descriptions)}
     
-    # Tabela para 2021 (com valores formatados como dinheiro)
-    sub.add_trace(
-        go.Table(
-            header=dict(values=['Valor_individual', 'Nome do cliente']),
-            cells=dict(values=[clientes1['Valor_individual_fmt'], clientes1['nome']])
-        ),
-        row=1, col=2
-    )
+    # Preencher os subplots
+    for i, (mes, df) in enumerate(validos):
+        df['Valor_individual_fmt'] = df['Valor_individual'].apply(format_currency)
+        bar_colors = [color_map[n] for n in df['nome']]
     
-    # Gráfico de barras para 2022
-    sub.add_trace(
-        go.Bar(x=clientes2['nome'], 
-               y=clientes2['Valor_individual'], 
-               name='Valores Fevereiro', 
-               marker=dict(color=bar_colors)),
-        row=2, col=1
-    )
+        sub.add_trace(
+            go.Bar(x=df['nome'], y=df['Valor_individual'], name=f'Valores {mes}', marker=dict(color=bar_colors)),
+            row=i+1, col=1
+        )
+        sub.add_trace(
+            go.Table(
+                header=dict(values=['Valor_individual', 'Nome do cliente']),
+                cells=dict(values=[df['Valor_individual_fmt'], df['nome']])
+            ),
+            row=i+1, col=2
+        )
     
-    # Tabela para 2022 (com valores formatados como dinheiro)
-    sub.add_trace(
-        go.Table(
-            header=dict(values=['Valor_individual', 'Nome do cliente']),
-            cells=dict(values=[clientes2['Valor_individual_fmt'], clientes2['nome']])
-        ),
-        row=2, col=2
-    )
-    
-    # Gráfico de barras para 2023
-    sub.add_trace(
-        go.Bar(x=clientes3['nome'], 
-               y=clientes3['Valor_individual'], 
-               name='Valores Março', 
-               marker=dict(color=bar_colors)),
-        row=3, col=1
-    )
-    
-    # Tabela para 2023 (com valores formatados como dinheiro)
-    sub.add_trace(
-        go.Table(
-            header=dict(values=['Valor_individual', 'Nome do cliente']),
-            cells=dict(values=[clientes3['Valor_individual_fmt'], clientes3['nome']])
-        ),
-        row=3, col=2
-    )
-    
-    # Gráfico de barras para 2024
-    sub.add_trace(
-        go.Bar(x=clientes4['nome'], 
-               y=clientes4['Valor_individual'], 
-               name='Valores Abril', 
-               marker=dict(color=bar_colors)),
-        row=4, col=1
-    )
-    
-    # Tabela para 2024 (com valores formatados como dinheiro)
-    sub.add_trace(
-        go.Table(
-            header=dict(values=['Valor_individual', 'Nome do cliente']),
-            cells=dict(values=[clientes4['Valor_individual_fmt'], clientes4['nome']])
-        ),
-        row=4, col=2
-    )
-    
-    # Gráfico de barras para 2025
-    sub.add_trace(
-        go.Bar(x=clientes5['nome'], 
-               y=clientes5['Valor_individual'], 
-               name='Valores Maio', 
-               marker=dict(color=bar_colors)),
-        row=5, col=1
-    )
-    
-    # Tabela para 2025 (com valores formatados como dinheiro)
-    sub.add_trace(
-        go.Table(
-            header=dict(values=['Valor_individual', 'Nome do cliente']),
-            cells=dict(values=[clientes5['Valor_individual_fmt'], clientes5['nome']])
-        ),
-        row=5, col=2
-    )
-    
-    # Gráfico de barras para 2025
-    sub.add_trace(
-        go.Bar(x=clientes6['nome'], 
-               y=clientes6['Valor_individual'], 
-               name='Valores Junho', 
-               marker=dict(color=bar_colors)),
-        row=6, col=1
-    )
-    
-    # Tabela para 2025 (com valores formatados como dinheiro)
-    sub.add_trace(
-        go.Table(
-            header=dict(values=['Valor_individual', 'Nome do cliente']),
-            cells=dict(values=[clientes6['Valor_individual_fmt'], clientes6['nome']])
-        ),
-        row=6, col=2
-    )
-    
-    # Gráfico de barras para 2025
-    sub.add_trace(
-        go.Bar(x=clientes7['nome'], 
-               y=clientes7['Valor_individual'], 
-               name='Valores Julho', 
-               marker=dict(color=bar_colors)),
-        row=7, col=1
-    )
-    
-    # Tabela para 2025 (com valores formatados como dinheiro)
-    sub.add_trace(
-        go.Table(
-            header=dict(values=['Valor_individual', 'Nome do cliente']),
-            cells=dict(values=[clientes7['Valor_individual_fmt'], clientes7['nome']])
-        ),
-        row=7, col=2
-    )
-    
-    
-    # Gráfico de barras para 2025
-    sub.add_trace(
-        go.Bar(x=clientes8['nome'], 
-               y=clientes8['Valor_individual'], 
-               name='Valores Agosto', 
-               marker=dict(color=bar_colors)),
-        row=8, col=1
-    )
-    
-    # Tabela para 2025 (com valores formatados como dinheiro)
-    sub.add_trace(
-        go.Table(
-            header=dict(values=['Valor_individual', 'Nome do cliente']),
-            cells=dict(values=[clientes8['Valor_individual_fmt'], clientes8['nome']])
-        ),
-        row=8, col=2
-    )
-    
-    
-    # Gráfico de barras para 2025
-    sub.add_trace(
-        go.Bar(x=clientes9['nome'], 
-               y=clientes9['Valor_individual'], 
-               name='Valores Setembro', 
-               marker=dict(color=bar_colors)),
-        row=9, col=1
-    )
-    
-    # Tabela para 2025 (com valores formatados como dinheiro)
-    sub.add_trace(
-        go.Table(
-            header=dict(values=['Valor_individual', 'Nome do cliente']),
-            cells=dict(values=[clientes9['Valor_individual_fmt'], clientes9['nome']])
-        ),
-        row=9, col=2
-    )
-    
-    
-    # Gráfico de barras para 2025
-    sub.add_trace(
-        go.Bar(x=clientes10['nome'], 
-               y=clientes10['Valor_individual'], 
-               name='Valores Outubro', 
-               marker=dict(color=bar_colors)),
-        row=10, col=1
-    )
-    
-    # Tabela para 2025 (com valores formatados como dinheiro)
-    sub.add_trace(
-        go.Table(
-            header=dict(values=['Valor_individual', 'Nome do cliente']),
-            cells=dict(values=[clientes10['Valor_individual_fmt'], clientes10['nome']])
-        ),
-        row=10, col=2
-    )
-    
-    # Gráfico de barras para 2025
-    sub.add_trace(
-        go.Bar(x=clientes11['nome'], 
-               y=clientes11['Valor_individual'], 
-               name='Valores Novembroo', 
-               marker=dict(color=bar_colors)),
-        row=11, col=1
-    )
-    
-    # Tabela para 2025 (com valores formatados como dinheiro)
-    sub.add_trace(
-        go.Table(
-            header=dict(values=['Valor_individual', 'Nome do cliente']),
-            cells=dict(values=[clientes11['Valor_individual_fmt'], clientes11['nome']])
-        ),
-        row=11, col=2
-    )
-    
-    # Gráfico de barras para 2025
-    sub.add_trace(
-        go.Bar(x=clientes12['nome'], 
-               y=clientes12['Valor_individual'], 
-               name='Valores Dezembro', 
-               marker=dict(color=bar_colors)),
-        row=12, col=1
-    )
-    
-    # Tabela para 2025 (com valores formatados como dinheiro)
-    sub.add_trace(
-        go.Table(
-            header=dict(values=['Valor_individual', 'Nome do cliente']),
-            cells=dict(values=[clientes12['Valor_individual_fmt'], clientes12['nome']])
-        ),
-        row=12, col=2
-    )
-    ################################
-    
-    # Ajustar o layout para remover os ticks e rótulos de todos os gráficos
+    # Layout final
     sub.update_layout(
         title_text="Clientes de maior valor",
         showlegend=False,
-        width=1200,  # Largura do gráfico
-        height=3000  # Altura do gráfico
+        width=1200,
+        height=300 * len(validos)
     )
-    
-    # Remover os ticks e rótulos dos eixos X de todos os gráficos de barras
     sub.update_xaxes(showticklabels=False)
+    sub.show()
     #prod = prod.head(10)
     prod1 = prod[['produto', 'Valor_individual']].groupby('produto',as_index=False).sum().sort_values(by='Valor_individual', ascending=False).head(10)
     colors = px.colors.qualitative.Set3
