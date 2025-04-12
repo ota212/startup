@@ -14,19 +14,21 @@
         <h2>Análise incial:</h2>
 
         {% if grafico_clientes %}
-  	<h3>Top Clientes no período todo:</h3>
-  	<iframe src="/static/grafico_clientes.html" width="100%" height="500"></iframe>
-	{% endif %}
+            <h3>Top Clientes no período todo:</h3>
+            <iframe src="/static/grafico_clientes.html" width="100%" height="500"></iframe>
+        {% endif %}
 
-	{% if grafico_mensal %}
-  	<h3>Análise Mensal:</h3>
-  	<iframe src="/static/grafico_mensal.html" width="100%" height="3000"></iframe>
-	{% endif %}
-	
-	{% if grafico_produtos %}
-  	<h2>Produtos em Destaque:</h2>
-  	<iframe src="/static/grafico_produtos.html" width="100%" height="500"></iframe>
-	{% endif %}
+        {% if grafico_mensal %}
+            <h3>Análise Mensal:</h3>
+            <iframe src="/static/grafico_mensal.html" width="100%" height="3000"></iframe>
+        {% endif %}
+        
+        {% if grafico_produtos %}
+            <h2>Produtos em Destaque:</h2>
+            <iframe src="/static/grafico_produtos.html" width="100%" height="500"></iframe>
+        {% endif %}
+
+    {% endif %}
 
     {% if error %}
         <p style="color: red">{{ error }}</p>
