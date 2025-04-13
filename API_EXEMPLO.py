@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[22]:
+# In[23]:
 
 
 from fastapi import FastAPI, Request, UploadFile, Form
@@ -81,7 +81,12 @@ async def upload_file(request: Request, file: UploadFile):
     df_teste1 = df_separated.merge(df_teste, on='numero_pedido', how='left')
     df_teste.loc[df_teste['telefone']=='N/D','telefone']=0
     df_teste['Valor_individual'] = df_teste['quantidade']*df_teste['valor_unitario']
-    clientes = df_teste[['nome', 'Valor_individual', 'data_pedido','email']].groupby(['nome', 'data_pedido','email'], as_index=False).sum().sort_values(by='Valor_individual', ascending=False).copy()
+    if sum(df_teste['data_pedido'].isna())<len(df_teste):
+        clientes = df_teste[['nome', 'Valor_individual', 'data_pedido','email']].groupby(['nome', 'data_pedido','email'], as_index=False).sum().sort_values(by='Valor_individual', ascending=False).copy()
+    else:
+        clientes = df_teste[['nome', 'Valor_individual', 'data_entrega','email']].groupby(['nome', 'data_entrega','email'], as_index=False).sum().sort_values(by='Valor_individual', ascending=False).copy()
+        clientes['data_pedido'] = clientes.data_entrega
+        
     if sum(df_teste['data_pedido'].isna())<len(df_teste):
         faturamento = df_teste[['data_pedido', 'Valor_individual']].groupby(['data_pedido'], as_index=False).sum().sort_values(by='data_pedido', ascending=False).reset_index(drop=True)
     else:
