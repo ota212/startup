@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[23]:
+# In[25]:
 
 
 from fastapi import FastAPI, Request, UploadFile, Form
@@ -117,70 +117,6 @@ async def upload_file(request: Request, file: UploadFile):
     df_teste['Valor_individual'] = df_teste['quantidade']*df_teste['valor_unitario']
     prod = df_teste[['produto', 'Valor_individual', 'quantidade', 'ano', 'mes']].groupby(['produto', 'ano', 'mes'], as_index=False).sum()
     prod['Valor_individual']=prod['Valor_individual']
-    df_teste['nome'] = df_teste[['nome', 'sobrenome']].astype(str).agg(' '.join, axis=1)
-    df_teste['Cont']=1
-    df_sorted = df_teste[['nome', 'produto', 'Cont']].sort_values(by=['nome', 'Cont'], ascending=[True, False])
-    def calcular_primeira_combinacao(df):
-        relacoes = []
-        for cliente, grupo in df_sorted.groupby('nome'):
-            # Pegar os 3 primeiros produtos (maior "Cont") para cada cliente
-            produtos = grupo.head(3)
-            
-            if len(produtos) == 3:  # Certificar que o cliente tem pelo menos dois produtos
-                produto1 = produtos.iloc[0]
-                produto2 = produtos.iloc[1]
-                produto3 = produtos.iloc[2]
-                
-                # Obter os valores de "Cont" para cada produto
-                cont1 = produto1['Cont']
-                cont2 = produto2['Cont']
-                cont3 = produto3['Cont']
-                
-                # Adicionar a relação ao resultado
-                relacoes.append({
-                    'Cliente': cliente,
-                    'Produto 1': produto1['produto'],
-                    'Produto 2': produto2['produto'],
-                    'Produto 3': produto3['produto'],
-                    'Cont 1': cont1,
-                    'Cont 2': cont2,
-                    'cont 3': cont3,
-                    'Soma Cont': cont1 + cont2 + cont3
-                })
-        
-        # Criar um DataFrame com as relações
-        return pd.DataFrame(relacoes)
-    
-    # Calcular a primeira combinação
-    relacoes = calcular_primeira_combinacao(df_sorted)
-    
-    base_prd=relacoes[(relacoes['Produto 1']!='FraÃ§Ã£o Kit - Queij') & (relacoes['Produto 2']!='CafÃ© Especial O Fla')][['Produto 1', 
-                      'Produto 2',
-                      'Produto 3',                                                                                                    
-                      'Cont 1', 
-                      'Cont 2',
-                      'cont 3']].groupby(['Produto 1', 
-                                          'Produto 2',
-                                        'Produto 3'],
-                                         as_index=False).sum().sort_values(by=['Cont 1', 
-                                                                               'Cont 2',
-                                                                              'cont 3'], 
-                                                                           ascending=False).drop_duplicates(subset=['Produto 1'], keep='first').head(10)
-    
-    # # Exibir o resultado
-    # relacoes = relacoes[(relacoes['Produto 1']!='FraÃ§Ã£o Kit - Queij') & (relacoes['Produto 2']!='CafÃ© Especial O Fla')][['Produto 1', 
-    #                                       'Produto 2',
-    #                                       'Produto 3',
-    #                                       'Cont 1', 
-    #                                        'Cont 2',
-    #                                        'cont 3']].groupby(['Produto 1', 
-    #                                       'Produto 2'],
-    #                                      as_index=False).sum().sort_values(by=['Cont 1', 
-    #                                                                            'Cont 2',
-    #                                                                           'cont 3'], 
-    #                                                                        ascending=False).drop_duplicates(subset=['Produto 1'], keep='first')
-    relacoes['Produto 3'] = relacoes['Produto 3'].str.split(' - ').str[0]
-    
     clientes1 = clientes[['nome', 'Valor_individual']].reset_index(drop=True)#
     clientes1=clientes1.reset_index(drop=True).iloc[:10]
     clientes1 = clientes[['nome', 'email', 'Valor_individual']].groupby(['nome', 'email'], as_index=False).sum().sort_values(by='Valor_individual', ascending=False).head(10)
