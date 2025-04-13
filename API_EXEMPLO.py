@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[21]:
+# In[22]:
 
 
 from fastapi import FastAPI, Request, UploadFile, Form
@@ -82,8 +82,11 @@ async def upload_file(request: Request, file: UploadFile):
     df_teste.loc[df_teste['telefone']=='N/D','telefone']=0
     df_teste['Valor_individual'] = df_teste['quantidade']*df_teste['valor_unitario']
     clientes = df_teste[['nome', 'Valor_individual', 'data_pedido','email']].groupby(['nome', 'data_pedido','email'], as_index=False).sum().sort_values(by='Valor_individual', ascending=False).copy()
-    faturamento = df_teste[['data_pedido', 'Valor_individual']].groupby(['data_pedido'], as_index=False).sum().sort_values(by='data_pedido', ascending=False).reset_index(drop=True)
-    faturamento = df_teste[['data_pedido', 'Valor_individual']].groupby(['data_pedido'], as_index=False).sum().sort_values(by='data_pedido', ascending=False).reset_index(drop=True)
+    if sum(df_teste['data_pedido'].isna())<len(df_teste):
+        faturamento = df_teste[['data_pedido', 'Valor_individual']].groupby(['data_pedido'], as_index=False).sum().sort_values(by='data_pedido', ascending=False).reset_index(drop=True)
+    else:
+        faturamento = df_teste[['data_entrega', 'Valor_individual']].groupby(['data_entrega'], as_index=False).sum().sort_values(by='data_entrega', ascending=False).reset_index(drop=True)
+        faturamento['data_pedido'] = faturamento.data_entrega
     faturamento['data_pedido'] = pd.to_datetime(faturamento['data_pedido'])
     faturamento['dia_semana'] = faturamento['data_pedido'].dt.strftime('%A')
     faturamento['data_pedido'] = faturamento['data_pedido'].dt.strftime('%Y-%m-%d')
@@ -265,11 +268,6 @@ async def upload_file(request: Request, file: UploadFile):
         "Dezembro": clientes12,
     }
     
-    # Formatar moeda
-    def format_currency(value):
-        return "${:,.2f}".format(value)
-    cont = 0
-    
     if len(clientes1)+len(clientes2)+len(clientes3)+len(clientes4)+len(clientes5)+len(clientes6)+len(clientes7)+len(clientes8)+len(clientes9)+len(clientes10)>0:
     
         # Criar uma lista de gráficos válidos
@@ -365,15 +363,18 @@ async def upload_file(request: Request, file: UploadFile):
     # Exemplo simples de gráfico
     
     fig.write_html("static/grafico_clientes.html")
+    grafico_mensal = False
     if 'sub' in locals():
         sub.write_html("static/grafico_mensal.html")
+        grafico_mensal = True
+
     fig1.write_html("static/grafico_produtos.html")
 
     return templates.TemplateResponse("index.html", {
                                                         "request": request,
                                                         "show_plot": True,
                                                         "grafico_clientes": True,
-                                                        "grafico_mensal": True,
+                                                        "grafico_mensal": grafico_mensal,
                                                         "grafico_produtos": True
             })
 
