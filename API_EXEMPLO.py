@@ -265,6 +265,7 @@ async def upload_file(request: Request, file: UploadFile):
         "Dezembro": clientes12,
     }
     
+    if len(clientes1)+len(clientes2)+len(clientes3)+len(clientes4)+len(clientes5)+len(clientes6)+len(clientes7)+len(clientes8)+len(clientes9)+len(clientes10)>0:
     # Formatar moeda
     def format_currency(value):
         return "${:,.2f}".format(value)
@@ -274,7 +275,7 @@ async def upload_file(request: Request, file: UploadFile):
     
     # Criar subgráficos com base no número de meses válidos
     sub = make_subplots(
-    rows=len(validos),
+        rows=len(validos),
         cols=2,
         column_widths=[1, 1.2],
         subplot_titles=sum([[f"Valor gasto por clientes - {mes}", f"Tabela - {mes}"] for mes, _ in validos], []),
@@ -316,7 +317,6 @@ async def upload_file(request: Request, file: UploadFile):
         height=300 * len(validos)
     )
     sub.update_xaxes(showticklabels=False)
-    sub.show()
     #prod = prod.head(10)
     prod1 = prod[['produto', 'Valor_individual']].groupby('produto',as_index=False).sum().sort_values(by='Valor_individual', ascending=False).head(10)
     colors = px.colors.qualitative.Set3
