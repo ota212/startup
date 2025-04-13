@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[20]:
+# In[21]:
 
 
 from fastapi import FastAPI, Request, UploadFile, Form
@@ -365,7 +365,8 @@ async def upload_file(request: Request, file: UploadFile):
     # Exemplo simples de gráfico
     
     fig.write_html("static/grafico_clientes.html")
-    sub.write_html("static/grafico_mensal.html")
+    if 'sub' in locals():
+        sub.write_html("static/grafico_mensal.html")
     fig1.write_html("static/grafico_produtos.html")
 
     return templates.TemplateResponse("index.html", {
