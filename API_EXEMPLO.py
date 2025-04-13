@@ -268,6 +268,7 @@ async def upload_file(request: Request, file: UploadFile):
     # Formatar moeda
     def format_currency(value):
         return "${:,.2f}".format(value)
+    cont = 0
     
     if len(clientes1)+len(clientes2)+len(clientes3)+len(clientes4)+len(clientes5)+len(clientes6)+len(clientes7)+len(clientes8)+len(clientes9)+len(clientes10)>0:
     
@@ -362,9 +363,16 @@ async def upload_file(request: Request, file: UploadFile):
     
     
     # Exemplo simples de gráfico
+    
     fig.write_html("static/grafico_clientes.html")
     sub.write_html("static/grafico_mensal.html")
     fig1.write_html("static/grafico_produtos.html")
 
-    return templates.TemplateResponse("index.html", {"request": request, "show_plot": True})
+    return templates.TemplateResponse("index.html", {
+                                                        "request": request,
+                                                        "show_plot": True,
+                                                        "grafico_clientes": True,
+                                                        "grafico_mensal": True,
+                                                        "grafico_produtos": True
+            })
 
