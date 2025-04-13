@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[19]:
+# In[20]:
 
 
 from fastapi import FastAPI, Request, UploadFile, Form
@@ -265,58 +265,60 @@ async def upload_file(request: Request, file: UploadFile):
         "Dezembro": clientes12,
     }
     
-    if len(clientes1)+len(clientes2)+len(clientes3)+len(clientes4)+len(clientes5)+len(clientes6)+len(clientes7)+len(clientes8)+len(clientes9)+len(clientes10)>0:
     # Formatar moeda
     def format_currency(value):
         return "${:,.2f}".format(value)
     
-    # Criar uma lista de gráficos válidos
-    validos = [(mes, df) for mes, df in clientes_dict.items() if not df.empty]
+    if len(clientes1)+len(clientes2)+len(clientes3)+len(clientes4)+len(clientes5)+len(clientes6)+len(clientes7)+len(clientes8)+len(clientes9)+len(clientes10)>0:
     
-    # Criar subgráficos com base no número de meses válidos
-    sub = make_subplots(
-        rows=len(validos),
-        cols=2,
-        column_widths=[1, 1.2],
-        subplot_titles=sum([[f"Valor gasto por clientes - {mes}", f"Tabela - {mes}"] for mes, _ in validos], []),
-        specs=[[{"type": "bar"}, {"type": "table"}] for _ in validos],
-        row_heights=[0.08] * len(validos),
-        vertical_spacing=0.02
-    )
-    
-    # Definir cores por cliente
-    all_nomes = pd.concat([df[['nome']] for _, df in validos])
-    unique_descriptions = all_nomes['nome'].unique()
-    colors = px.colors.qualitative.Set3
-    if len(unique_descriptions) > len(colors):
-        colors = px.colors.qualitative.Set2
-    color_map = {desc: colors[i % len(colors)] for i, desc in enumerate(unique_descriptions)}
-    
-    # Preencher os subplots
-    for i, (mes, df) in enumerate(validos):
-        df['Valor_individual_fmt'] = df['Valor_individual'].apply(format_currency)
-        bar_colors = [color_map[n] for n in df['nome']]
-    
-        sub.add_trace(
-            go.Bar(x=df['nome'], y=df['Valor_individual'], name=f'Valores {mes}', marker=dict(color=bar_colors)),
-            row=i+1, col=1
+        # Criar uma lista de gráficos válidos
+        validos = [(mes, df) for mes, df in clientes_dict.items() if not df.empty]
+        
+        # Criar subgráficos com base no número de meses válidos
+        sub = make_subplots(
+            rows=len(validos),
+            cols=2,
+            column_widths=[1, 1.2],
+            subplot_titles=sum([[f"Valor gasto por clientes - {mes}", f"Tabela - {mes}"] for mes, _ in validos], []),
+            specs=[[{"type": "bar"}, {"type": "table"}] for _ in validos],
+            row_heights=[0.08] * len(validos),
+            vertical_spacing=0.02
         )
-        sub.add_trace(
-            go.Table(
-                header=dict(values=['Valor_individual', 'Nome do cliente']),
-                cells=dict(values=[df['Valor_individual_fmt'], df['nome']])
-            ),
-            row=i+1, col=2
+        
+        # Definir cores por cliente
+        all_nomes = pd.concat([df[['nome']] for _, df in validos])
+        unique_descriptions = all_nomes['nome'].unique()
+        colors = px.colors.qualitative.Set3
+        if len(unique_descriptions) > len(colors):
+            colors = px.colors.qualitative.Set2
+        color_map = {desc: colors[i % len(colors)] for i, desc in enumerate(unique_descriptions)}
+        
+        # Preencher os subplots
+        for i, (mes, df) in enumerate(validos):
+            df['Valor_individual_fmt'] = df['Valor_individual'].apply(format_currency)
+            bar_colors = [color_map[n] for n in df['nome']]
+        
+            sub.add_trace(
+                go.Bar(x=df['nome'], y=df['Valor_individual'], name=f'Valores {mes}', marker=dict(color=bar_colors)),
+                row=i+1, col=1
+            )
+            sub.add_trace(
+                go.Table(
+                    header=dict(values=['Valor_individual', 'Nome do cliente']),
+                    cells=dict(values=[df['Valor_individual_fmt'], df['nome']])
+                ),
+                row=i+1, col=2
+            )
+        
+        # Layout final
+        sub.update_layout(
+            title_text="Clientes de maior valor",
+            showlegend=False,
+            width=1200,
+            height=300 * len(validos)
         )
+        sub.update_xaxes(showticklabels=False)
     
-    # Layout final
-    sub.update_layout(
-        title_text="Clientes de maior valor",
-        showlegend=False,
-        width=1200,
-        height=300 * len(validos)
-    )
-    sub.update_xaxes(showticklabels=False)
     #prod = prod.head(10)
     prod1 = prod[['produto', 'Valor_individual']].groupby('produto',as_index=False).sum().sort_values(by='Valor_individual', ascending=False).head(10)
     colors = px.colors.qualitative.Set3
